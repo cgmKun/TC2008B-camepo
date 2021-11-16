@@ -1,4 +1,5 @@
 import agentpy as ap
+import os
 
 # Initial matrix for the road system
 def initial_roads():
@@ -25,6 +26,7 @@ def print_roads(matriz):
 def valid_coordinate(ypos, xpos):
     if xpos <= 15 and ypos <= 15 and xpos >= 0 and ypos >= 0 and road[ypos][xpos] != 'x':
         return (True)
+    print("movimiento invalido")
     return (False)
     
 # Controller to make valid movements
@@ -66,6 +68,13 @@ def simulation():
     x = ""
     while x != "-1":
         x = input("Movement: ")
+        
+        # Limpiar pantalla en mac / linux
+        os.system('clear')
+        
+        # Limpiar pantalla en windows
+        #os.system('cls')
+        
         controller(x)
         print_roads(curr_road)
     print("End controller simulation")
