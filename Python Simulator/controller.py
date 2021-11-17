@@ -1,6 +1,7 @@
 import agentpy as ap
 import os
 import random
+import time
 
 # Initial matrix for the road system
 def initial_roads():
@@ -12,7 +13,8 @@ def initial_roads():
     return roads
 
 # Global variable for roads and testing
-road = initial_roads()
+roadx = initial_roads()
+road_history = []
 player_xpos = 0
 player_ypos = 0
 
@@ -24,38 +26,37 @@ def print_roads(matriz):
         print()
 
 # Check if the current position in the matrix is not out of bounds
-def valid_coordinate(ypos, xpos):
+def valid_coordinate(ypos, xpos, road):
     if xpos <= 3 and ypos <= 3 and xpos >= 0 and ypos >= 0 and road[ypos][xpos] != 'x':
         return (True)
     return (False)
     
 # Controller to make valid movements
-def controller(x, player_xpos, player_ypos):
-    global road
+def controller(x, player_xpos, player_ypos, road):
     
     if x == 'w':
-        if valid_coordinate(player_ypos-1, player_xpos):
+        if valid_coordinate(player_ypos-1, player_xpos, road):
             player_ypos -= 1
             road[player_ypos][player_xpos] += 1
             road[player_ypos+1][player_xpos] -= 1
             print()
             print_roads(road)
     elif x == 'a':
-        if valid_coordinate(player_ypos, player_xpos-1):
+        if valid_coordinate(player_ypos, player_xpos-1, road):
             player_xpos -= 1
             road[player_ypos][player_xpos] += 1
             road[player_ypos][player_xpos+1] -= 1
             print()
             print_roads(road)
     elif x == 's':
-        if valid_coordinate(player_ypos+1, player_xpos):
+        if valid_coordinate(player_ypos+1, player_xpos, road):
             player_ypos += 1
             road[player_ypos][player_xpos] += 1
             road[player_ypos-1][player_xpos] -= 1
             print()
             print_roads(road)
     elif x == 'd':
-        if valid_coordinate(player_ypos, player_xpos+1):
+        if valid_coordinate(player_ypos, player_xpos+1, road):
             player_xpos += 1
             road[player_ypos][player_xpos] += 1
             road[player_ypos][player_xpos-1] -= 1
@@ -66,7 +67,7 @@ def controller(x, player_xpos, player_ypos):
 
 # Manual control for the simulation matrix
 def simulation():
-    curr_road = road
+    curr_road = roadx
     x = ""
     while x != "-1":
         x = input("Movement: ")
@@ -88,43 +89,53 @@ class Vehicle(ap.Agent):
         self.xpos = 0
         self.ypos = 0
 
-    def movement(self):
+    def movement(self, space):
         # valid_coordinate(self.ypos-1, self.xpos)
         white_list = ['w', 'a', 's', 'd']
         choice = random.choice(white_list)
 
-        if choice == 'w' and valid_coordinate(self.ypos-1, self.xpos):
-            controller(choice, self.xpos, self.ypos)
+        if choice == 'w' and valid_coordinate(self.ypos-1, self.xpos, space):
+            controller(choice, self.xpos, self.ypos, space)
             self.ypos -= 1
-        elif choice == 'a' and valid_coordinate(self.ypos, self.xpos-1):
-            controller(choice, self.xpos, self.ypos)
+        elif choice == 'a' and valid_coordinate(self.ypos, self.xpos-1, space):
+            controller(choice, self.xpos, self.ypos, space)
             self.xpos -= 1
-        elif choice == 's' and valid_coordinate(self.ypos+1, self.xpos):
-            controller(choice, self.xpos, self.ypos)
+        elif choice == 's' and valid_coordinate(self.ypos+1, self.xpos, space):
+            controller(choice, self.xpos, self.ypos, space)
             self.ypos += 1
-        elif choice == 'd' and valid_coordinate(self.ypos, self.xpos+1):
-            controller(choice, self.xpos, self.ypos)
+        elif choice == 'd' and valid_coordinate(self.ypos, self.xpos+1, space):
+            controller(choice, self.xpos, self.ypos, space)
             self.xpos += 1
+        
+        self.record('ypos', self.ypos)
+        self.record('xpos', self.xpos)
 
 # Model class
 class Model(ap.Model):
     def setup(self):
-        self.space =  initial_roads()
+        self.space = initial_roads()
         self.agents = ap.AgentList(self, 2, Vehicle)
     
     def step(self):
-        self.agents.movement()
-    
-    def end(self):
-        print('Si termina')
+        self.agents.movement(self.space)
 
 parameters = {
-    'steps': 10,
+    'steps': 20,
 }
 
 def main():
     # simulation()
+    global road_history
     model = Model(parameters)
     result = model.run()
+    print(result.variables.Vehicle)
+    
+    #for i in range(len(road_history)):
+     #   print('i = ', i)
+      #  print_roads(road_history[i])
+       # print()
+        #time.sleep(1)
+        #os.system('clear')
+
     #print(result.reporters)
 main()
