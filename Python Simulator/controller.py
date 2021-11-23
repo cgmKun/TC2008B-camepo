@@ -2,6 +2,7 @@ import agentpy as ap
 import os
 import random
 import time
+import csv
 
 # Class to set the individual
 class road_block:
@@ -19,33 +20,25 @@ class road_block:
 # Initial matrix for the road system
 def initial_roads():
     
-    up = road_block(2, 'up')
-    down = road_block(2, 'down')
-    left = road_block(2, 'left')
-    right = road_block(2, 'right')
-    null = road_block(0, 'null')
-    null.curr_capacity = -1
+    file = open('road.csv')
+    type(file)
+
+    reader = csv.reader(file)
+    rows = []
+    for row in reader:
+        rows.append(row)
+
     
-    roads = [
-        [road_block(2, 'down'), road_block(2, 'left'), road_block(2, 'left'), road_block(2, 'left')],
-        [road_block(2, 'down'), road_block(0, 'null'), road_block(0, 'null'), road_block(2, 'up')],
-        [road_block(2, 'down'), road_block(0, 'null'), road_block(0, 'null'), road_block(2, 'up')],
-        [road_block(2, 'right'), road_block(2, 'right'), road_block(2, 'right'), road_block(2, 'up')]
-    ]
 
-    #rows = 4
-    #cols = 4
-    #row = [road_block() for i in range(cols)]
-    #mat = [list(row) for i in range(rows)]
-    #print(roads[0][0].direction)
-    #print(roads[0][1].direction)
-
-    # roads = [
-    # [1, 0, 0, 0], 
-    # [0, 'x', 'x', 0], 
-    # [0, 0, 0, 0],
-    # [0, 0, 0, 0]]
-
+    # Load the roads layout from a csv file
+    roads = []
+    for i in range(0, len(rows)):
+        temp_row = []
+        for j in range(0, len(rows[0])):
+            print(rows[i][j][1])
+            temp_row.append(road_block(rows[i][j][0], rows[i][j][1]))
+        roads.append(temp_row)
+    
     return roads
 
 # Print matrix of the system
@@ -119,22 +112,22 @@ def manual_controller(x):
     global player_ypos
     global roadx
     if x == 'w':
-        if valid_coordinate_roads(player_ypos-1, player_xpos, roadx) and roadx[player_ypos][player_xpos].direction == 'up':
+        if valid_coordinate_roads(player_ypos-1, player_xpos, roadx) and roadx[player_ypos][player_xpos].direction == 'U':
             player_ypos -= 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos+1][player_xpos].curr_capacity -= 1
     elif x == 'a':
-        if valid_coordinate_roads(player_ypos, player_xpos-1, roadx) and roadx[player_ypos][player_xpos].direction == 'left':
+        if valid_coordinate_roads(player_ypos, player_xpos-1, roadx) and roadx[player_ypos][player_xpos].direction == 'L':
             player_xpos -= 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos][player_xpos+1].curr_capacity -= 1
     elif x == 's':
-        if valid_coordinate_roads(player_ypos+1, player_xpos, roadx) and roadx[player_ypos][player_xpos].direction == 'down':
+        if valid_coordinate_roads(player_ypos+1, player_xpos, roadx) and roadx[player_ypos][player_xpos].direction == 'D':
             player_ypos += 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos-1][player_xpos].curr_capacity -= 1
     elif x == 'd':
-        if valid_coordinate_roads(player_ypos, player_xpos+1, roadx) and roadx[player_ypos][player_xpos].direction == 'right':
+        if valid_coordinate_roads(player_ypos, player_xpos+1, roadx) and roadx[player_ypos][player_xpos].direction == 'R':
             player_xpos += 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos][player_xpos-1].curr_capacity -= 1
