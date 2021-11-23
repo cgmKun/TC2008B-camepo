@@ -33,6 +33,13 @@ def initial_roads():
         [road_block(2, 'right'), road_block(2, 'right'), road_block(2, 'right'), road_block(2, 'up')]
     ]
 
+    #rows = 4
+    #cols = 4
+    #row = [road_block() for i in range(cols)]
+    #mat = [list(row) for i in range(rows)]
+    #print(roads[0][0].direction)
+    #print(roads[0][1].direction)
+
     # roads = [
     # [1, 0, 0, 0], 
     # [0, 'x', 'x', 0], 
@@ -112,22 +119,22 @@ def manual_controller(x):
     global player_ypos
     global roadx
     if x == 'w':
-        if valid_coordinate_roads(player_ypos-1, player_xpos, roadx):
+        if valid_coordinate_roads(player_ypos-1, player_xpos, roadx) and roadx[player_ypos][player_xpos].direction == 'up':
             player_ypos -= 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos+1][player_xpos].curr_capacity -= 1
     elif x == 'a':
-        if valid_coordinate_roads(player_ypos, player_xpos-1, roadx):
+        if valid_coordinate_roads(player_ypos, player_xpos-1, roadx) and roadx[player_ypos][player_xpos].direction == 'left':
             player_xpos -= 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos][player_xpos+1].curr_capacity -= 1
     elif x == 's':
-        if valid_coordinate_roads(player_ypos+1, player_xpos, roadx):
+        if valid_coordinate_roads(player_ypos+1, player_xpos, roadx) and roadx[player_ypos][player_xpos].direction == 'down':
             player_ypos += 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos-1][player_xpos].curr_capacity -= 1
     elif x == 'd':
-        if valid_coordinate_roads(player_ypos, player_xpos+1, roadx):
+        if valid_coordinate_roads(player_ypos, player_xpos+1, roadx) and roadx[player_ypos][player_xpos].direction == 'right':
             player_xpos += 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos][player_xpos-1].curr_capacity -= 1
