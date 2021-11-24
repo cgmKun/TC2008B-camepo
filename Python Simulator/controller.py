@@ -32,7 +32,7 @@ def initial_roads():
     for i in range(0, len(rows)):
         temp_row = []
         for j in range(0, len(rows[0])):
-            temp_row.append(road_block(rows[i][j][0], rows[i][j][1:]))
+            temp_row.append(road_block(int(rows[i][j][0]), rows[i][j][1:]))
         roads.append(temp_row)
 
     return roads
@@ -60,15 +60,17 @@ def print_new_roads(roads):
         print()
 
 # Check if the current position in the matrix is not out of bounds
-def valid_coordinate(ypos, xpos, road):
-    return xpos < len(road[0]) and ypos < len(road) and xpos >= 0 and ypos >= 0
+def valid_coordinate_roads(ypos, xpos, road):
+    if xpos < len(road[0]) and ypos < len(road) and xpos >= 0 and ypos >= 0:
+        return True
+    return False
 
 # Controller to make valid movements
-def agent_controller(x, player_xpos, player_ypos, roadx):
+def manual_controller(x, player_xpos, player_ypos, roadx):
     if x == 'w':
         player_ypos -= 1
         roadx[player_ypos][player_xpos].curr_capacity += 1
-        roadx[player_ypos+1][player_xpos].curr_capacity -= 1
+        roadx[player_ypos+1][player_xpos].curr_capacity -= 1            
     elif x == 'a':
         player_xpos -= 1
         roadx[player_ypos][player_xpos].curr_capacity += 1
@@ -82,7 +84,7 @@ def agent_controller(x, player_xpos, player_ypos, roadx):
         roadx[player_ypos][player_xpos].curr_capacity += 1
         roadx[player_ypos][player_xpos-1].curr_capacity -= 1
     else:
-        print("Err. Invalid movement")
+        print("movimiento invalido")
 
 # Vehicle Class
 class Vehicle(ap.Agent):
@@ -93,59 +95,39 @@ class Vehicle(ap.Agent):
         self.curr_step = 0
         self.path = get_paths()[0]
 
-        # RNG spawn state
-        self.trip_begin = False
-        self.trip_end = False
-        
-        # Trip spawn rate, given by the numbers of 0 and 1 on the matrix
-        # 1 -> trip_begin = true
-        # 0 -> trip_begin = false
-        # Current rate 50% of spawn
-        self.trip_spawn_rate = [1, 0, 0, 0, 0]
-
         # KPI's
         self.completion_percentage = 0
         self.trip_length = 0
 
     def movement(self, space):
-
-        #Check if the vehicle has been deployed
-        if self.trip_begin == False:
-            rng = random.choice(self.trip_spawn_rate)
-            if(rng == 1):
-                self.trip_begin = True
-
-        # If the agent has any moves left to do
-        if self.curr_step < len(self.path) and self.trip_begin == True:
+        # Get the current coordinate
+        if self.curr_step < len(self.path):
             choice = self.path[self.curr_step]
-            # Check the choice from the macro
             if choice == 'w':
-                #If valid, perform the move
-                if valid_coordinate(self.ypos-1, self.xpos, space) and 'U' in space[self.ypos][self.xpos].direction:
-                    agent_controller(choice, self.xpos, self.ypos, space)
+                if valid_coordinate_roads(self.ypos-1, self.xpos, space) and 'U' in space[self.ypos][self.xpos].direction and space[self.ypos-1][self.xpos].curr_capacity < space[self.ypos-1][self.xpos].max_capacity:
+                    manual_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.ypos -= 1
             elif choice == 'a':
-                if valid_coordinate(self.ypos, self.xpos-1, space) and 'L' in space[self.ypos][self.xpos].direction:
-                    agent_controller(choice, self.xpos, self.ypos, space)
+                if valid_coordinate_roads(self.ypos, self.xpos-1, space) and 'L' in space[self.ypos][self.xpos].direction and space[self.ypos][self.xpos-1].curr_capacity < space[self.ypos][self.xpos-1].max_capacity:
+                    manual_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.xpos -= 1
             elif choice == 's':
-                if valid_coordinate(self.ypos+1, self.xpos, space) and 'D' in space[self.ypos][self.xpos].direction:
-                    agent_controller(choice, self.xpos, self.ypos, space)
+                if valid_coordinate_roads(self.ypos+1, self.xpos, space) and 'D' in space[self.ypos][self.xpos].direction and space[self.ypos+1][self.xpos].curr_capacity < space[self.ypos+1][self.xpos].max_capacity:
+                    manual_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.ypos += 1
             elif choice == 'd':
-                if valid_coordinate(self.ypos, self.xpos+1, space) and 'R' in space[self.ypos][self.xpos].direction:
-                    agent_controller(choice, self.xpos, self.ypos, space)
+                if valid_coordinate_roads(self.ypos, self.xpos+1, space) and 'R' in space[self.ypos][self.xpos].direction and space[self.ypos][self.xpos+1].curr_capacity < space[self.ypos][self.xpos+1].max_capacity:
+                    manual_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.xpos += 1
-            # Add the tracker
             self.trip_length += 1
 
         self.completion_percentage = (self.curr_step / len(self.path))*100
         self.record('trip_length', self.trip_length)
-        self.record('trip_completion_rate', self.completion_percentage)
+        self.record('completion_percentage', self.completion_percentage)
         self.record('ypos', self.ypos)
         self.record('xpos', self.xpos)
 
@@ -154,12 +136,11 @@ class Model(ap.Model):
     def setup(self):
         self.space = initial_roads()
         self.agents = ap.AgentList(self, 2, Vehicle)
-    
+
     def step(self):
         self.agents.movement(self.space)
         print()
         print_new_roads(self.space)
-        time.sleep(1)
 
 parameters = {
     'steps': 20,
@@ -170,7 +151,7 @@ def main():
     model = Model(parameters)
     result = model.run()
     print(result.variables.Vehicle)
-    
+
     #for i in range(len(road_history)):
      #   print('i = ', i)
       #  print_roads(road_history[i])
