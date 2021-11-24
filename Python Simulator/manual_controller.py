@@ -5,8 +5,6 @@ import time
 import csv
 
 # Class to set the individual
-
-
 class road_block:
     def __init__(self, max_capacity, direction):
         self.max_capacity = max_capacity
@@ -17,7 +15,6 @@ class road_block:
         if self.curr_capacity == self.max_capacity:
             return True
         return False
-
 
 # Initial matrix for the road system
 def initial_roads():
@@ -40,7 +37,6 @@ def initial_roads():
 
     return roads
 
-
 # Global variable for roads and testing
 roadx = initial_roads()
 road_history = []
@@ -48,14 +44,14 @@ player_xpos = 0
 player_ypos = 0
 
 # Print matrix of the system
-
-
 def print_new_roads(roads):
     for ren in range(len(roads)):
         for col in range(len(roads[0])):
-            print(roads[ren][col].curr_capacity, end=" ")
+            if roads[ren][col].direction == 'N':
+                print('X', end=" ")
+            else:
+                print(roads[ren][col].curr_capacity, end=" ")
         print()
-
 
 def valid_coordinate_roads(ypos, xpos, road):
     if xpos <= len(road) and ypos <= len(road[0]) and xpos >= 0 and ypos >= 0:
@@ -63,8 +59,6 @@ def valid_coordinate_roads(ypos, xpos, road):
     return False
 
 # Controller to make valid movements
-
-
 def manual_controller(x):
     global player_xpos
     global player_ypos
@@ -93,8 +87,6 @@ def manual_controller(x):
         print("movimiento invalido")
 
 # Manual control for the simulation matrix
-
-
 def simulation():
     global roadx
 
