@@ -54,9 +54,7 @@ def print_new_roads(roads):
         print()
 
 def valid_coordinate_roads(ypos, xpos, road):
-    if xpos <= len(road) and ypos <= len(road[0]) and xpos >= 0 and ypos >= 0:
-        return True
-    return False
+    return (xpos < len(road) and ypos < len(road[0]) and xpos >= 0 and ypos >= 0)
 
 # Controller to make valid movements
 def manual_controller(x):
