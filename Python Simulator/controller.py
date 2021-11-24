@@ -15,11 +15,10 @@ class road_block:
         if self.curr_capacity == self.max_capacity:
             return True
         return False
-        
 
 # Initial matrix for the road system
 def initial_roads():
-    
+
     file = open('road.csv')
     type(file)
 
@@ -28,131 +27,89 @@ def initial_roads():
     for row in reader:
         rows.append(row)
 
-    
-
     # Load the roads layout from a csv file
     roads = []
     for i in range(0, len(rows)):
         temp_row = []
         for j in range(0, len(rows[0])):
-            print(rows[i][j][1])
-            temp_row.append(road_block(rows[i][j][0], rows[i][j][1]))
+            temp_row.append(road_block(rows[i][j][0], rows[i][j][1:]))
         roads.append(temp_row)
-    
+
     return roads
 
 # Print matrix of the system
 def print_new_roads(roads):
     for ren in range(len(roads)):
         for col in range(len(roads[0])):
-            print(roads[ren][col].curr_capacity, end=" ")
-        print()
-
-def print_roads(matriz):
-    for ren in range(len(matriz)):
-        for col in range(len(matriz[0])):
-            print(matriz[ren][col], end=" ")
+            if roads[ren][col].direction == 'N':
+                print('X', end=" ")
+            else:
+                print(roads[ren][col].curr_capacity, end=" ")
         print()
 
 # Check if the current position in the matrix is not out of bounds
-def valid_coordinate(ypos, xpos, road):
-    if xpos <= 3 and ypos <= 3 and xpos >= 0 and ypos >= 0 and road[ypos][xpos] != 'x':
-        return (True)
-    return (False)
-
 def valid_coordinate_roads(ypos, xpos, road):
     if xpos <= 3 and ypos <= 3 and xpos >= 0 and ypos >= 0:
         return True
     return False
     
 # Controller to make valid movements
-def controller(x, player_xpos, player_ypos, road):
-    
-    if x == 'w':
-        if valid_coordinate(player_ypos-1, player_xpos, road):
-            player_ypos -= 1
-            road[player_ypos][player_xpos] += 1
-            road[player_ypos+1][player_xpos] -= 1
-            print()
-            print_roads(road)
-    elif x == 'a':
-        if valid_coordinate(player_ypos, player_xpos-1, road):
-            player_xpos -= 1
-            road[player_ypos][player_xpos] += 1
-            road[player_ypos][player_xpos+1] -= 1
-            print()
-            print_roads(road)
-    elif x == 's':
-        if valid_coordinate(player_ypos+1, player_xpos, road):
-            player_ypos += 1
-            road[player_ypos][player_xpos] += 1
-            road[player_ypos-1][player_xpos] -= 1
-            print()
-            print_roads(road)
-    elif x == 'd':
-        if valid_coordinate(player_ypos, player_xpos+1, road):
-            player_xpos += 1
-            road[player_ypos][player_xpos] += 1
-            road[player_ypos][player_xpos-1] -= 1
-            print()
-            print_roads(road)
-    else:
-        print("movimiento invalido")
-
-
-# Global variable for roads and testing
-roadx = initial_roads()
-road_history = []
-player_xpos = 0
-player_ypos = 0
+# def controller(x, player_xpos, player_ypos, road):
+#     if x == 'w':
+#         if valid_coordinate(player_ypos-1, player_xpos, road):
+#             player_ypos -= 1
+#             road[player_ypos][player_xpos] += 1
+#             road[player_ypos+1][player_xpos] -= 1
+#             print()
+#             print_roads(road)
+#     elif x == 'a':
+#         if valid_coordinate(player_ypos, player_xpos-1, road):
+#             player_xpos -= 1
+#             road[player_ypos][player_xpos] += 1
+#             road[player_ypos][player_xpos+1] -= 1
+#             print()
+#             print_roads(road)
+#     elif x == 's':
+#         if valid_coordinate(player_ypos+1, player_xpos, road):
+#             player_ypos += 1
+#             road[player_ypos][player_xpos] += 1
+#             road[player_ypos-1][player_xpos] -= 1
+#             print()
+#             print_roads(road)
+#     elif x == 'd':
+#         if valid_coordinate(player_ypos, player_xpos+1, road):
+#             player_xpos += 1
+#             road[player_ypos][player_xpos] += 1
+#             road[player_ypos][player_xpos-1] -= 1
+#             print()
+#             print_roads(road)
+#     else:
+#         print("movimiento invalido")
 
 # Controller to make valid movements
-def manual_controller(x):
-    global player_xpos
-    global player_ypos
-    global roadx
+def manual_controller(x, player_xpos, player_ypos, roadx):
     if x == 'w':
-        if valid_coordinate_roads(player_ypos-1, player_xpos, roadx) and roadx[player_ypos][player_xpos].direction == 'U':
+        if valid_coordinate_roads(player_ypos-1, player_xpos, roadx) and 'U' in roadx[player_ypos][player_xpos].direction:
             player_ypos -= 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos+1][player_xpos].curr_capacity -= 1
     elif x == 'a':
-        if valid_coordinate_roads(player_ypos, player_xpos-1, roadx) and roadx[player_ypos][player_xpos].direction == 'L':
+        if valid_coordinate_roads(player_ypos, player_xpos-1, roadx) and 'L' in roadx[player_ypos][player_xpos].direction:
             player_xpos -= 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos][player_xpos+1].curr_capacity -= 1
     elif x == 's':
-        if valid_coordinate_roads(player_ypos+1, player_xpos, roadx) and roadx[player_ypos][player_xpos].direction == 'D':
+        if valid_coordinate_roads(player_ypos+1, player_xpos, roadx) and 'D' in roadx[player_ypos][player_xpos].direction:
             player_ypos += 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos-1][player_xpos].curr_capacity -= 1
     elif x == 'd':
-        if valid_coordinate_roads(player_ypos, player_xpos+1, roadx) and roadx[player_ypos][player_xpos].direction == 'R':
+        if valid_coordinate_roads(player_ypos, player_xpos+1, roadx) and 'R' in roadx[player_ypos][player_xpos].direction:
             player_xpos += 1
             roadx[player_ypos][player_xpos].curr_capacity += 1
             roadx[player_ypos][player_xpos-1].curr_capacity -= 1
     else:
         print("movimiento invalido")
-
-# Manual control for the simulation matrix
-def simulation():
-    global roadx
-    x = ""
-    while x != "-1":
-        print('posX ', player_xpos)
-        print('posY ', player_ypos)
-        x = input("Movement: ")
-        
-        # Limpiar pantalla en mac / linux
-        #os.system('clear')
-        
-        # Limpiar pantalla en windows
-        #os.system('cls')
-        
-        manual_controller(x)
-        print_new_roads(roadx)
-        print()
-    print("End controller simulation")
 
 # Vehicle Class
 class Vehicle(ap.Agent):
@@ -166,17 +123,19 @@ class Vehicle(ap.Agent):
         white_list = ['w', 'a', 's', 'd']
         choice = random.choice(white_list)
 
-        if choice == 'w' and valid_coordinate(self.ypos-1, self.xpos, space):
-            controller(choice, self.xpos, self.ypos, space)
+        print('choice: ', choice)
+
+        if choice == 'w' and valid_coordinate_roads(self.ypos-1, self.xpos, space):
+            manual_controller(choice, self.xpos, self.ypos, space)
             self.ypos -= 1
-        elif choice == 'a' and valid_coordinate(self.ypos, self.xpos-1, space):
-            controller(choice, self.xpos, self.ypos, space)
+        elif choice == 'a' and valid_coordinate_roads(self.ypos, self.xpos-1, space):
+            manual_controller(choice, self.xpos, self.ypos, space)
             self.xpos -= 1
-        elif choice == 's' and valid_coordinate(self.ypos+1, self.xpos, space):
-            controller(choice, self.xpos, self.ypos, space)
+        elif choice == 's' and valid_coordinate_roads(self.ypos+1, self.xpos, space):
+            manual_controller(choice, self.xpos, self.ypos, space)
             self.ypos += 1
-        elif choice == 'd' and valid_coordinate(self.ypos, self.xpos+1, space):
-            controller(choice, self.xpos, self.ypos, space)
+        elif choice == 'd' and valid_coordinate_roads(self.ypos, self.xpos+1, space):
+            manual_controller(choice, self.xpos, self.ypos, space)
             self.xpos += 1
         
         self.record('ypos', self.ypos)
@@ -190,17 +149,18 @@ class Model(ap.Model):
     
     def step(self):
         self.agents.movement(self.space)
+        print()
+        print_new_roads(self.space)
 
 parameters = {
-    'steps': 20,
+    'steps': 10,
 }
 
 def main():
-    simulation()
     #global road_history
-    #model = Model(parameters)
-    #result = model.run()
-    #print(result.variables.Vehicle)
+    model = Model(parameters)
+    result = model.run()
+    print(result.variables.Vehicle)
     
     #for i in range(len(road_history)):
      #   print('i = ', i)
