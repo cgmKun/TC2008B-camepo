@@ -181,7 +181,6 @@ def main():
     #global road_history
     model = Model(parameters)
     result = model.run()
-    data-frame-to-json-vice-versa
     variables = result.variables.Vehicle
 
     print(dataFrame_to_JSON(variables))
