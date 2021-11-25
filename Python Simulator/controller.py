@@ -1,8 +1,10 @@
 import agentpy as ap
+import pandas as pd
 import os
 import random
 import time
 import csv
+import json
 
 # Class to set the individual
 class road_block:
@@ -165,18 +167,21 @@ parameters = {
     'steps': 20,
 }
 
+#parameters = pandas´s dataframe
+def dataFrame_to_JSON(df):
+    json = df.to_json(orient = 'records')
+    return json
+
+def JSON_to_dataFrame(json):
+    df = pd.read_json(json, orient = 'index')
+    return df    
+
+
 def main():
     #global road_history
     model = Model(parameters)
     result = model.run()
-    print(result.variables.Vehicle)
-    
-    #for i in range(len(road_history)):
-     #   print('i = ', i)
-      #  print_roads(road_history[i])
-       # print()
-        #time.sleep(1)
-        #os.system('clear')
+    variables = result.variables.Vehicle
 
-    #print(result.reporters)
+    print(dataFrame_to_JSON(variables))
 main()
