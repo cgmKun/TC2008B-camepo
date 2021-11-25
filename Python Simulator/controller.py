@@ -34,7 +34,7 @@ def initial_roads():
     for i in range(0, len(rows)):
         temp_row = []
         for j in range(0, len(rows[0])):
-            temp_row.append(road_block(rows[i][j][0], rows[i][j][1:]))
+            temp_row.append(road_block(int(rows[i][j][0]), rows[i][j][1:]))
         roads.append(temp_row)
 
     return roads
@@ -123,22 +123,22 @@ class Vehicle(ap.Agent):
             # Check the choice from the macro
             if choice == 'w':
                 #If valid, perform the move
-                if valid_coordinate(self.ypos-1, self.xpos, space) and 'U' in space[self.ypos][self.xpos].direction:
+                if valid_coordinate(self.ypos-1, self.xpos, space) and 'U' in space[self.ypos][self.xpos].direction and space[self.ypos-1][self.xpos].curr_capacity < space[self.ypos-1][self.xpos].max_capacity:
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.ypos -= 1
             elif choice == 'a':
-                if valid_coordinate(self.ypos, self.xpos-1, space) and 'L' in space[self.ypos][self.xpos].direction:
+                if valid_coordinate(self.ypos, self.xpos-1, space) and 'L' in space[self.ypos][self.xpos].direction and space[self.ypos][self.xpos-1].curr_capacity < space[self.ypos][self.xpos-1].max_capacity:
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.xpos -= 1
             elif choice == 's':
-                if valid_coordinate(self.ypos+1, self.xpos, space) and 'D' in space[self.ypos][self.xpos].direction:
+                if valid_coordinate(self.ypos+1, self.xpos, space) and 'D' in space[self.ypos][self.xpos].direction and space[self.ypos+1][self.xpos].curr_capacity < space[self.ypos+1][self.xpos].max_capacity:
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.ypos += 1
             elif choice == 'd':
-                if valid_coordinate(self.ypos, self.xpos+1, space) and 'R' in space[self.ypos][self.xpos].direction:
+                if valid_coordinate(self.ypos, self.xpos+1, space) and 'R' in space[self.ypos][self.xpos].direction and space[self.ypos][self.xpos+1].curr_capacity < space[self.ypos][self.xpos+1].max_capacity:
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.xpos += 1
@@ -181,7 +181,9 @@ def main():
     #global road_history
     model = Model(parameters)
     result = model.run()
+    data-frame-to-json-vice-versa
     variables = result.variables.Vehicle
 
     print(dataFrame_to_JSON(variables))
 main()
+
