@@ -21,7 +21,7 @@ class road_block:
 # Initial matrix for the road system
 def initial_roads():
 
-    file = open('road.csv')
+    file = open('unity_roads.csv')
     type(file)
 
     reader = csv.reader(file)
@@ -40,7 +40,7 @@ def initial_roads():
     return roads
 
 def get_paths():
-    file = open('path_macros.csv')
+    file = open('unity_path_macros.csv')
     type(file)
 
     reader = csv.reader(file)
@@ -56,9 +56,13 @@ def print_new_roads(roads):
     for ren in range(len(roads)):
         for col in range(len(roads[0])):
             if roads[ren][col].direction == 'N':
-                print('X', end=" ")
+                print('◌', end=" ")
             else:
-                print(roads[ren][col].curr_capacity, end=" ")
+                if(roads[ren][col].curr_capacity != 0):
+                    print('■', end=' ')
+                else:
+                    print('▴', end=" ")
+                #print(roads[ren][col].curr_capacity, end=' ')
         print()
 
 # Check if the current position in the matrix is not out of bounds
@@ -86,6 +90,17 @@ def agent_controller(x, player_xpos, player_ypos, roadx):
     else:
         print("Err. Invalid movement")
 
+
+
+# Street light Class
+class Street_light(ap.Agent):
+    def setup(self):
+        self.clock = 0
+
+    def check_state(self, space):
+        if self.clock == 5:
+            self.clock
+
 # Vehicle Class
 class Vehicle(ap.Agent):
     def setup(self):
@@ -93,21 +108,46 @@ class Vehicle(ap.Agent):
         self.xpos = 0
         self.ypos = 0
         self.curr_step = 0
-        self.path = get_paths()[0]
+        self.path = []
 
         # RNG spawn state
         self.trip_begin = False
         self.trip_end = False
         
-        # Trip spawn rate, given by the numbers of 0 and 1 on the matrix
+        # Trip spawn rate, given by the numbers of 0 and 1 on the matrixy
         # 1 -> trip_begin = true
         # 0 -> trip_begin = false
-        # Current rate 50% of spawn
-        self.trip_spawn_rate = [1, 0, 0, 0, 0]
+        # Current rate 20% of spawn
+        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         # KPI's
         self.completion_percentage = 0
         self.trip_length = 0
+
+        # Initialize variables
+        self.set_define_path()
+
+    def set_define_path(self):
+        white_list = [0,1,2]
+        white_list_paths = [0,1,2,3]
+        path_pool_choice = random.choice(white_list)
+        
+        if(path_pool_choice == 0):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 0
+            self.ypos = 1
+            self.path = get_paths()[path_choice]
+        elif(path_pool_choice == 1):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 0
+            self.ypos = 11
+            self.path = get_paths()[path_choice + 4]
+        elif(path_pool_choice == 2):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 12
+            self.ypos = 10
+            self.path = get_paths()[path_choice + 8]
+        
 
     def movement(self, space):
 
@@ -116,6 +156,7 @@ class Vehicle(ap.Agent):
             rng = random.choice(self.trip_spawn_rate)
             if(rng == 1):
                 self.trip_begin = True
+                space[self.ypos][self.xpos].curr_capacity += 1
 
         # If the agent has any moves left to do
         if self.curr_step < len(self.path) and self.trip_begin == True:
@@ -142,6 +183,10 @@ class Vehicle(ap.Agent):
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.xpos += 1
+            # If the agent has arrived at its destination, despawn from the scene
+            if(self.curr_step == len(self.path)):
+                self.trip_end = True
+                space[self.ypos][self.xpos].curr_capacity -= 1
             # Add the tracker
             self.trip_length += 1
 
@@ -155,16 +200,16 @@ class Vehicle(ap.Agent):
 class Model(ap.Model):
     def setup(self):
         self.space = initial_roads()
-        self.agents = ap.AgentList(self, 2, Vehicle)
+        self.agents = ap.AgentList(self, 50, Vehicle)
     
     def step(self):
         self.agents.movement(self.space)
         print()
         print_new_roads(self.space)
-        time.sleep(1)
+        time.sleep(0.1)
 
 parameters = {
-    'steps': 20,
+    'steps': 100,
 }
 
 #parameters = pandas´s dataframe
@@ -178,11 +223,11 @@ def JSON_to_dataFrame(json):
 
 
 def main():
-    #global road_history
+    # global road_history
     model = Model(parameters)
     result = model.run()
     variables = result.variables.Vehicle
 
-    print(dataFrame_to_JSON(variables))
+    #print(dataFrame_to_JSON(variables))
 main()
 
