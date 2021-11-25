@@ -1,3 +1,6 @@
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import numpy as np
+import logging
 import agentpy as ap
 import pandas as pd
 import os
@@ -236,7 +239,7 @@ class Model(ap.Model):
         self.street_lights.check_state(self.space)
         self.vehicles.movement(self.space)
         print()
-        print_new_roads(self.space)
+        #print_new_roads(self.space)
         time.sleep(0.14)
 
 parameters = {
@@ -246,7 +249,7 @@ parameters = {
 
 #parameters = pandas´s dataframe
 def dataFrame_to_JSON(df):
-    json = df.to_json(orient = 'records')
+    json = df.to_json(orient = 'index')
     return json
 
 def JSON_to_dataFrame(json):
@@ -258,7 +261,70 @@ def main():
     model = Model(parameters)
     result = model.run()
     variables = result.variables.Vehicle
+    
 
     #print(dataFrame_to_JSON(variables))
-main()
 
+def generar_json():
+    model = Model(parameters)
+    result = model.run()
+    variables = result.variables.Vehicle
+    s_json = dataFrame_to_JSON(variables)
+    return s_json
+
+#main()
+
+#----------------SERVER----------------
+
+#El rey del server:
+class Server(BaseHTTPRequestHandler):
+
+    def _set_response(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+
+    def do_GET(self):
+        logging.info("GET request,\nPath: %s\nHeaders:\n%s\n",
+                     str(self.path), str(self.headers))
+        self._set_response()
+        self.wfile.write("GET request for {}".format(
+            self.path).encode('utf-8'))
+
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        #post_data = self.rfile.read(content_length)
+        post_data = json.loads(self.rfile.read(content_length))
+        #logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
+        #str(self.path), str(self.headers), post_data.decode('utf-8'))
+        logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
+                     str(self.path), str(self.headers), json.dumps(post_data))
+
+        # AQUI ACTUALIZA LO QUE SE TENGA QUE ACTUALIZAR
+        self._set_response()
+        #AQUI SE MANDA EL SHOW
+        resp = "{\"data\":" + generar_json() + "}"
+        #print(resp)
+        self.wfile.write(resp.encode('utf-8'))
+
+
+def run(server_class=HTTPServer, handler_class=Server, port=8585):
+    logging.basicConfig(level=logging.INFO)
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    logging.info("Starting httpd...\n")  # HTTPD is HTTP Daemon!
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:   # CTRL+C stops the server
+        pass
+    httpd.server_close()
+    logging.info("Stopping httpd...\n")
+
+
+if __name__ == '__main__':
+    from sys import argv
+
+    if len(argv) == 2:
+        run(port=int(argv[1]))
+    else:
+        run()
