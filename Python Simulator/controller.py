@@ -12,6 +12,7 @@ class road_block:
         self.max_capacity = max_capacity
         self.curr_capacity = 0
         self.direction = direction
+        self.can_advance = True
 
     def isFull(self):
         if self.curr_capacity == self.max_capacity:
@@ -90,16 +91,45 @@ def agent_controller(x, player_xpos, player_ypos, roadx):
     else:
         print("Err. Invalid movement")
 
-
-
 # Street light Class
 class Street_light(ap.Agent):
     def setup(self):
         self.clock = 0
+        self.state = False
+
+        self.right_lane_lights = [[1,3],[6,3],[11,3],[1,9],[3,10],[6,8],[9,10],[11,9]]
+        self.left_lane_lights = [[0,6],[5,6],[10,6],[2,11],[8,11],[10,12]]
 
     def check_state(self, space):
         if self.clock == 5:
-            self.clock
+            self.clock = 0
+            self.state = not self.state
+            self.update_state(space)
+        
+        self.clock += 1
+
+    def update_state(self, space):
+        print()
+        if(self.state):
+            print('GREEN FOR RIGHT LANE')
+            for i in range(0, len(self.right_lane_lights)):
+                ypos = self.right_lane_lights[i][0]
+                xpos = self.right_lane_lights[i][1]
+                space[ypos][xpos].can_advance = True
+            for i in range(0, len(self.left_lane_lights)):
+                ypos = self.left_lane_lights[i][0]
+                xpos = self.left_lane_lights[i][1]
+                space[ypos][xpos].can_advance = False
+        else:
+            print('GREEN FOR LEFT LANE')
+            for i in range(0, len(self.right_lane_lights)):
+                ypos = self.right_lane_lights[i][0]
+                xpos = self.right_lane_lights[i][1]
+                space[ypos][xpos].can_advance = False
+            for i in range(0, len(self.left_lane_lights)):
+                ypos = self.left_lane_lights[i][0]
+                xpos = self.left_lane_lights[i][1]
+                space[ypos][xpos].can_advance = True
 
 # Vehicle Class
 class Vehicle(ap.Agent):
@@ -117,8 +147,7 @@ class Vehicle(ap.Agent):
         # Trip spawn rate, given by the numbers of 0 and 1 on the matrixy
         # 1 -> trip_begin = true
         # 0 -> trip_begin = false
-        # Current rate 20% of spawn
-        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         # KPI's
         self.completion_percentage = 0
@@ -164,22 +193,22 @@ class Vehicle(ap.Agent):
             # Check the choice from the macro
             if choice == 'w':
                 #If valid, perform the move
-                if valid_coordinate(self.ypos-1, self.xpos, space) and 'U' in space[self.ypos][self.xpos].direction and space[self.ypos-1][self.xpos].curr_capacity < space[self.ypos-1][self.xpos].max_capacity:
+                if valid_coordinate(self.ypos-1, self.xpos, space) and 'U' in space[self.ypos][self.xpos].direction and space[self.ypos-1][self.xpos].curr_capacity < space[self.ypos-1][self.xpos].max_capacity and space[self.ypos][self.xpos].can_advance:
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.ypos -= 1
             elif choice == 'a':
-                if valid_coordinate(self.ypos, self.xpos-1, space) and 'L' in space[self.ypos][self.xpos].direction and space[self.ypos][self.xpos-1].curr_capacity < space[self.ypos][self.xpos-1].max_capacity:
+                if valid_coordinate(self.ypos, self.xpos-1, space) and 'L' in space[self.ypos][self.xpos].direction and space[self.ypos][self.xpos-1].curr_capacity < space[self.ypos][self.xpos-1].max_capacity and space[self.ypos][self.xpos].can_advance:
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.xpos -= 1
             elif choice == 's':
-                if valid_coordinate(self.ypos+1, self.xpos, space) and 'D' in space[self.ypos][self.xpos].direction and space[self.ypos+1][self.xpos].curr_capacity < space[self.ypos+1][self.xpos].max_capacity:
+                if valid_coordinate(self.ypos+1, self.xpos, space) and 'D' in space[self.ypos][self.xpos].direction and space[self.ypos+1][self.xpos].curr_capacity < space[self.ypos+1][self.xpos].max_capacity and space[self.ypos][self.xpos].can_advance:
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.ypos += 1
             elif choice == 'd':
-                if valid_coordinate(self.ypos, self.xpos+1, space) and 'R' in space[self.ypos][self.xpos].direction and space[self.ypos][self.xpos+1].curr_capacity < space[self.ypos][self.xpos+1].max_capacity:
+                if valid_coordinate(self.ypos, self.xpos+1, space) and 'R' in space[self.ypos][self.xpos].direction and space[self.ypos][self.xpos+1].curr_capacity < space[self.ypos][self.xpos+1].max_capacity and space[self.ypos][self.xpos].can_advance:
                     agent_controller(choice, self.xpos, self.ypos, space)
                     self.curr_step += 1
                     self.xpos += 1
@@ -200,16 +229,19 @@ class Vehicle(ap.Agent):
 class Model(ap.Model):
     def setup(self):
         self.space = initial_roads()
-        self.agents = ap.AgentList(self, 50, Vehicle)
+        self.vehicles = ap.AgentList(self, self.p.agents, Vehicle)
+        self.street_lights = ap.AgentList(self, 1, Street_light)
     
     def step(self):
-        self.agents.movement(self.space)
+        self.street_lights.check_state(self.space)
+        self.vehicles.movement(self.space)
         print()
         print_new_roads(self.space)
-        time.sleep(0.1)
+        time.sleep(0.14)
 
 parameters = {
-    'steps': 100,
+    'steps': 150,
+    'agents': 50,
 }
 
 #parameters = pandas´s dataframe
@@ -220,7 +252,6 @@ def dataFrame_to_JSON(df):
 def JSON_to_dataFrame(json):
     df = pd.read_json(json, orient = 'index')
     return df    
-
 
 def main():
     # global road_history
