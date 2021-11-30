@@ -10,6 +10,9 @@ import csv
 import json
 from termcolor import colored
 
+#General array to store runs information
+info_jaja = []
+
 # Class to set the individual
 class road_block:
     def __init__(self, max_capacity, direction):
@@ -105,7 +108,7 @@ class Street_light(ap.Agent):
         self.left_lane_lights = [[0,6],[5,6],[10,6],[2,11],[8,11],[10,12],[2,5],[7,5],[2,11],[8,11]]
 
     def check_state(self, space):
-        if self.clock == 2:
+        if self.clock == 3:
             self.clock = 0
             self.state = not self.state
             self.update_state(space)
@@ -148,10 +151,11 @@ class Vehicle(ap.Agent):
         # Trip spawn rate, given by the numbers of 0 and 1 on the matrixy
         # 1 -> trip_begin = true
         # 0 -> trip_begin = false
-        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         # KPI's
         self.completion_percentage = 0
+        self.trip_length_ratio = 0
         self.trip_length = 0
 
         # Initialize variables
@@ -192,8 +196,27 @@ class Vehicle(ap.Agent):
             self.xpos = 12
             self.ypos = 10
             self.path = get_paths()[path_choice + 10]
-        #self.record('ypos', self.ypos) #cambio
-        #self.record('xpos', self.xpos) #cambio
+
+    def old_set_define_path(self):
+        white_list = [0,1,2]
+        white_list_paths = [0,1,2,3]
+        path_pool_choice = random.choice(white_list)
+        
+        if(path_pool_choice == 0):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 0
+            self.ypos = 1
+            self.path = get_paths()[path_choice]
+        elif(path_pool_choice == 1):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 0
+            self.ypos = 11
+            self.path = get_paths()[path_choice + 4]
+        elif(path_pool_choice == 2):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 12
+            self.ypos = 10
+            self.path = get_paths()[path_choice + 8]
         
 
     def movement(self, space):
@@ -204,8 +227,8 @@ class Vehicle(ap.Agent):
             if(rng == 1):
                 self.trip_begin = True
                 space[self.ypos][self.xpos].curr_capacity += 1
-                self.record('ypos', self.ypos) #cambio
-                self.record('xpos', self.xpos) #cambio
+                self.record('ypos', self.ypos)
+                self.record('xpos', self.xpos)
 
         # If the agent has any moves left to do
         if self.curr_step < len(self.path) and self.trip_begin == True:
@@ -240,10 +263,15 @@ class Vehicle(ap.Agent):
             self.trip_length += 1
 
         self.completion_percentage = (self.curr_step / len(self.path))*100
+        self.trip_length_ratio = (self.trip_length / len(self.path))*100
+
+        # Records
         self.record('trip_length', self.trip_length)
         self.record('trip_completion_rate', self.completion_percentage)
+        self.record('trip_length_ratio', self.trip_length_ratio)
         self.record('ypos', self.ypos)
         self.record('xpos', self.xpos)
+
 
 # Model class
 class Model(ap.Model):
@@ -251,17 +279,39 @@ class Model(ap.Model):
         self.space = initial_roads()
         self.vehicles = ap.AgentList(self, self.p.agents, Vehicle)
         self.street_lights = ap.AgentList(self, 1, Street_light)
+
+    def get_average_trip_length(self):
+        return round(sum(self.vehicles.trip_length) / self.p.agents, 2)
+
+    def get_average_trip_completion_percentage(self):
+        return round(sum(self.vehicles.completion_percentage) / self.p.agents, 2)
+        
+    def get_average_trips_completed(self):
+        completed_trips = self.vehicles.select(self.vehicles.trip_end == True)
+        return round(len(completed_trips) / self.p.agents, 2)
     
     def step(self):
         self.street_lights.check_state(self.space)
         self.vehicles.movement(self.space)
-        print()
-        #print_new_roads(self.space)
-        time.sleep(0.1)
+        #print()
+        #time.sleep(0.1)
+    
+    def end(self):
+        global info_jaja
+        buffer_array = []
+        buffer_array.append(self.space)
+        buffer_array.append(self.get_average_trip_length())
+        buffer_array.append(self.get_average_trip_completion_percentage())
+        buffer_array.append(self.get_average_trips_completed())
+        info_jaja.append(buffer_array)
+        # print_new_roads(self.space)
+        # print("Porcentaje de viajes completados: ", self.get_average_trips_completed())
+        # print("Promedio de porcentaje de complecion de viaje", self.get_average_trip_completion_percentage())
+        # print("Promedio de duracion de viaje", self.get_average_trip_length())
 
 parameters = {
-    'steps': 20,
-    'agents': 3,
+    'steps': 100,
+    'agents': 100,
 }
 
 #parameters = pandas´s dataframe
@@ -279,8 +329,48 @@ def main():
     result = model.run()
     variables = result.variables.Vehicle
     s_json = dataFrame_to_JSON(variables)
-    print(s_json)
+    #print(s_json)
     #print(variables.columns)
+
+def get_runs():
+    
+    blocked_cases = 0
+    total_runs_trip_duration = 0
+    total_runs_trip_completion_rate = 0
+    total_runs_completed_trips_percentage = 0
+
+    for i in range(0,100):
+        model = Model(parameters)
+        result = model.run()
+
+
+    for i in range(len(info_jaja)):
+        if info_jaja[i][2] < 73.0 and info_jaja[i][3] < 0.6:
+            blocked_cases += 1
+
+        total_runs_trip_duration += info_jaja[i][1]
+        total_runs_trip_completion_rate += info_jaja[i][2]
+        total_runs_completed_trips_percentage += info_jaja[i][3]
+
+        # print("Corrida ", i)
+        # print_new_roads(info_jaja[i][0])
+        # print("Duracion Promedio de viaje: ", info_jaja[i][1])
+        # print("Porcentaje promedio de complecion de viaje: ", info_jaja[i][2])
+        # print("Porcentaje de viajes completados: ", info_jaja[i][3])
+        # print()
+
+    average_run_trip_length = round(total_runs_trip_duration / len(info_jaja), 2)
+    average_run_trip_completion_rate = round(total_runs_trip_completion_rate / len(info_jaja), 2)
+    average_run_completed_trips_percentage = round(total_runs_completed_trips_percentage / len(info_jaja), 2)
+
+    print("-----------------------------------------")
+    print("Corridas de simulacion: ", len(info_jaja))
+    print("Duracion promedio de viaje: ", average_run_trip_length)
+    print("Porcentaje promedio de complecion de viaje: ", average_run_trip_completion_rate)
+    print("Porcentaje de viajes completados: ", average_run_completed_trips_percentage)
+    print("CASOS BLOQUEADOS TOTALES: ", blocked_cases)
+    print()
+
 
 def generar_json():
     model = Model(parameters)
@@ -313,7 +403,8 @@ def generar_json():
     return final_json
 
 #main()
-print(generar_json())
+get_runs()
+#print(generar_json())
 
 #----------------SERVER----------------
 
