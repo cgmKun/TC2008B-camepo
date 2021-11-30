@@ -192,6 +192,8 @@ class Vehicle(ap.Agent):
             self.xpos = 12
             self.ypos = 10
             self.path = get_paths()[path_choice + 10]
+        #self.record('ypos', self.ypos) #cambio
+        #self.record('xpos', self.xpos) #cambio
         
 
     def movement(self, space):
@@ -202,6 +204,8 @@ class Vehicle(ap.Agent):
             if(rng == 1):
                 self.trip_begin = True
                 space[self.ypos][self.xpos].curr_capacity += 1
+                self.record('ypos', self.ypos) #cambio
+                self.record('xpos', self.xpos) #cambio
 
         # If the agent has any moves left to do
         if self.curr_step < len(self.path) and self.trip_begin == True:
@@ -252,12 +256,12 @@ class Model(ap.Model):
         self.street_lights.check_state(self.space)
         self.vehicles.movement(self.space)
         print()
-        print_new_roads(self.space)
+        #print_new_roads(self.space)
         time.sleep(0.1)
 
 parameters = {
-    'steps': 200,
-    'agents': 100,
+    'steps': 20,
+    'agents': 3,
 }
 
 #parameters = pandas´s dataframe
@@ -274,15 +278,42 @@ def main():
     model = Model(parameters)
     result = model.run()
     variables = result.variables.Vehicle
+    s_json = dataFrame_to_JSON(variables)
+    print(s_json)
+    #print(variables.columns)
+
+def generar_json():
+    model = Model(parameters)
+    result = model.run()
+
+    variables = result.variables.Vehicle
+    val_Y = variables['ypos'].values
+    val_X = variables['xpos'].values
+
+    steps = parameters["steps"]
+    agents = parameters["agents"]
+    
+    split_lY = np.array_split(val_Y, agents)
+    split_lX = np.array_split(val_X, agents)
+
+    dic_json = {"parameters" : parameters}
+
     print(variables)
 
-# def generar_json():
-#     model = Model(parameters)
-#     result = model.run()
-#     variables = result.variables.Vehicle
-#     s_json = dataFrame_to_JSON(variables)
-#     return s_json
-main()
+    for ag in range(agents):
+        steps_aux = {}
+        lg_splitY = split_lY[ag]
+        lg_splitX = split_lX[ag]
+
+        for step in range(steps):
+            steps_aux[str(step+1)] = [int(lg_splitX[step]), int(lg_splitY[step])]
+        dic_json[str(ag+1)] = steps_aux
+
+    final_json = json.dumps(dic_json)
+    return final_json
+
+#main()
+print(generar_json())
 
 #----------------SERVER----------------
 
