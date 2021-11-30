@@ -8,6 +8,7 @@ import random
 import time
 import csv
 import json
+from termcolor import colored
 
 # Class to set the individual
 class road_block:
@@ -44,7 +45,7 @@ def initial_roads():
     return roads
 
 def get_paths():
-    file = open('unity_path_macros.csv')
+    file = open('better_path_macros.csv')
     type(file)
 
     reader = csv.reader(file)
@@ -60,12 +61,12 @@ def print_new_roads(roads):
     for ren in range(len(roads)):
         for col in range(len(roads[0])):
             if roads[ren][col].direction == 'N':
-                print('◌', end=" ")
+                print(colored('▴', 'green'), end=" ")
             else:
                 if(roads[ren][col].curr_capacity != 0):
-                    print('■', end=' ')
+                    print(colored('■','magenta'), end=' ')
                 else:
-                    print('▴', end=" ")
+                    print('◌', end=" ")
                 #print(roads[ren][col].curr_capacity, end=' ')
         print()
 
@@ -100,21 +101,19 @@ class Street_light(ap.Agent):
         self.clock = 0
         self.state = False
 
-        self.right_lane_lights = [[1,3],[6,3],[11,3],[1,9],[3,10],[6,8],[9,10],[11,9]]
-        self.left_lane_lights = [[0,6],[5,6],[10,6],[2,11],[8,11],[10,12]]
+        self.right_lane_lights = [[1,3],[6,3],[11,3],[1,9],[3,10],[6,8],[9,10],[11,9],[4,4],[9,4],[3,10],[9,10]]
+        self.left_lane_lights = [[0,6],[5,6],[10,6],[2,11],[8,11],[10,12],[2,5],[7,5],[2,11],[8,11]]
 
     def check_state(self, space):
-        if self.clock == 5:
+        if self.clock == 2:
             self.clock = 0
             self.state = not self.state
             self.update_state(space)
         
         self.clock += 1
 
-    def update_state(self, space):
-        print()
+    def update_state(self, space):  
         if(self.state):
-            print('GREEN FOR RIGHT LANE')
             for i in range(0, len(self.right_lane_lights)):
                 ypos = self.right_lane_lights[i][0]
                 xpos = self.right_lane_lights[i][1]
@@ -124,7 +123,6 @@ class Street_light(ap.Agent):
                 xpos = self.left_lane_lights[i][1]
                 space[ypos][xpos].can_advance = False
         else:
-            print('GREEN FOR LEFT LANE')
             for i in range(0, len(self.right_lane_lights)):
                 ypos = self.right_lane_lights[i][0]
                 xpos = self.right_lane_lights[i][1]
@@ -150,7 +148,7 @@ class Vehicle(ap.Agent):
         # Trip spawn rate, given by the numbers of 0 and 1 on the matrixy
         # 1 -> trip_begin = true
         # 0 -> trip_begin = false
-        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         # KPI's
         self.completion_percentage = 0
@@ -160,8 +158,8 @@ class Vehicle(ap.Agent):
         self.set_define_path()
 
     def set_define_path(self):
-        white_list = [0,1,2]
-        white_list_paths = [0,1,2,3]
+        white_list = [0,1,2,3,4,5]
+        white_list_paths = [0,1]
         path_pool_choice = random.choice(white_list)
         
         if(path_pool_choice == 0):
@@ -172,13 +170,28 @@ class Vehicle(ap.Agent):
         elif(path_pool_choice == 1):
             path_choice = random.choice(white_list_paths)
             self.xpos = 0
+            self.ypos = 6
+            self.path = get_paths()[path_choice + 2]
+        elif(path_pool_choice == 2):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 0
             self.ypos = 11
             self.path = get_paths()[path_choice + 4]
-        elif(path_pool_choice == 2):
+        elif(path_pool_choice == 3):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 12
+            self.ypos = 0
+            self.path = get_paths()[path_choice + 6]
+        elif(path_pool_choice == 4):
+            path_choice = random.choice(white_list_paths)
+            self.xpos = 13
+            self.ypos = 5
+            self.path = get_paths()[path_choice + 8]
+        elif(path_pool_choice == 5):
             path_choice = random.choice(white_list_paths)
             self.xpos = 12
             self.ypos = 10
-            self.path = get_paths()[path_choice + 8]
+            self.path = get_paths()[path_choice + 10]
         
 
     def movement(self, space):
@@ -239,12 +252,12 @@ class Model(ap.Model):
         self.street_lights.check_state(self.space)
         self.vehicles.movement(self.space)
         print()
-        #print_new_roads(self.space)
-        time.sleep(0.14)
+        print_new_roads(self.space)
+        time.sleep(0.1)
 
 parameters = {
-    'steps': 150,
-    'agents': 50,
+    'steps': 200,
+    'agents': 100,
 }
 
 #parameters = pandas´s dataframe
@@ -261,70 +274,69 @@ def main():
     model = Model(parameters)
     result = model.run()
     variables = result.variables.Vehicle
-    
+    print(variables)
 
-    #print(dataFrame_to_JSON(variables))
-
-def generar_json():
-    model = Model(parameters)
-    result = model.run()
-    variables = result.variables.Vehicle
-    s_json = dataFrame_to_JSON(variables)
-    return s_json
-
-#main()
+# def generar_json():
+#     model = Model(parameters)
+#     result = model.run()
+#     variables = result.variables.Vehicle
+#     s_json = dataFrame_to_JSON(variables)
+#     return s_json
+main()
 
 #----------------SERVER----------------
 
-#El rey del server:
-class Server(BaseHTTPRequestHandler):
+# #El rey del server:
+# class Server(BaseHTTPRequestHandler):
 
-    def _set_response(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
+#     def _set_response(self):
+#         self.send_response(200)
+#         self.send_header('Content-type', 'text/html')
+#         self.end_headers()
 
-    def do_GET(self):
-        logging.info("GET request,\nPath: %s\nHeaders:\n%s\n",
-                     str(self.path), str(self.headers))
-        self._set_response()
-        self.wfile.write("GET request for {}".format(
-            self.path).encode('utf-8'))
+#     def do_GET(self):
+#         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n",
+#                      str(self.path), str(self.headers))
+#         self._set_response()
+#         self.wfile.write("GET request for {}".format(
+#             self.path).encode('utf-8'))
 
-    def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        #post_data = self.rfile.read(content_length)
-        post_data = json.loads(self.rfile.read(content_length))
-        #logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
-        #str(self.path), str(self.headers), post_data.decode('utf-8'))
-        logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
-                     str(self.path), str(self.headers), json.dumps(post_data))
+#     def do_POST(self):
+#         content_length = int(self.headers['Content-Length'])
+#         #post_data = self.rfile.read(content_length)
+#         post_data = json.loads(self.rfile.read(content_length))
+#         #logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
+#         #str(self.path), str(self.headers), post_data.decode('utf-8'))
+#         logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
+#                      str(self.path), str(self.headers), json.dumps(post_data))
 
-        # AQUI ACTUALIZA LO QUE SE TENGA QUE ACTUALIZAR
-        self._set_response()
-        #AQUI SE MANDA EL SHOW
-        resp = "{\"data\":" + generar_json() + "}"
-        #print(resp)
-        self.wfile.write(resp.encode('utf-8'))
-
-
-def run(server_class=HTTPServer, handler_class=Server, port=8585):
-    logging.basicConfig(level=logging.INFO)
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    logging.info("Starting httpd...\n")  # HTTPD is HTTP Daemon!
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:   # CTRL+C stops the server
-        pass
-    httpd.server_close()
-    logging.info("Stopping httpd...\n")
+#         # AQUI ACTUALIZA LO QUE SE TENGA QUE ACTUALIZAR
+#         self._set_response()
+#         #AQUI SE MANDA EL SHOW
+#         resp = "{\"data\":" + generar_json() + "}"
+#         #print(resp)
+#         self.wfile.write(resp.encode('utf-8'))
 
 
-if __name__ == '__main__':
-    from sys import argv
+# def run(server_class=HTTPServer, handler_class=Server, port=8585):
+#     logging.basicConfig(level=logging.INFO)
+    
+#     # Asignar Direccion correcta
+#     server_address = ('', port)
+#     httpd = server_class(server_address, handler_class)
+#     logging.info("Starting httpd...\n")  # HTTPD is HTTP Daemon!
+#     try:
+#         httpd.serve_forever()
+#     except KeyboardInterrupt:   # CTRL+C stops the server
+#         pass
+#     httpd.server_close()
+#     logging.info("Stopping httpd...\n")
 
-    if len(argv) == 2:
-        run(port=int(argv[1]))
-    else:
-        run()
+
+# if __name__ == '__main__':
+#     from sys import argv
+
+#     if len(argv) == 2:
+#         run(port=int(argv[1]))
+#     else:
+#         run()
