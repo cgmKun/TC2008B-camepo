@@ -1,9 +1,6 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import numpy as np
-import logging
 import agentpy as ap
 import pandas as pd
-import os
 import random
 import time
 import csv
@@ -11,7 +8,7 @@ import json
 from termcolor import colored
 
 #General array to store runs information
-info_jaja = []
+runs_statistics = []
 
 # Class to set the individual
 class road_block:
@@ -47,6 +44,7 @@ def initial_roads():
 
     return roads
 
+# Get the agent path macros
 def get_paths():
     file = open('better_path_macros.csv')
     type(file)
@@ -151,7 +149,8 @@ class Vehicle(ap.Agent):
         # Trip spawn rate, given by the numbers of 0 and 1 on the matrixy
         # 1 -> trip_begin = true
         # 0 -> trip_begin = false
-        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        # Standard probability -> 1/40 -> 2.5%
+        self.trip_spawn_rate = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
         # KPI's
         self.completion_percentage = 0
@@ -294,27 +293,24 @@ class Model(ap.Model):
         self.street_lights.check_state(self.space)
         self.vehicles.movement(self.space)
         #print()
+        #print_new_roads(self.space)
         #time.sleep(0.1)
     
     def end(self):
-        global info_jaja
+        global runs_statistics
         buffer_array = []
         buffer_array.append(self.space)
         buffer_array.append(self.get_average_trip_length())
         buffer_array.append(self.get_average_trip_completion_percentage())
         buffer_array.append(self.get_average_trips_completed())
-        info_jaja.append(buffer_array)
+        runs_statistics.append(buffer_array)
+        # Statistic in individual Run
         # print_new_roads(self.space)
         # print("Porcentaje de viajes completados: ", self.get_average_trips_completed())
         # print("Promedio de porcentaje de complecion de viaje", self.get_average_trip_completion_percentage())
         # print("Promedio de duracion de viaje", self.get_average_trip_length())
 
-parameters = {
-    'steps': 100,
-    'agents': 100,
-}
-
-#parameters = pandas´s dataframe
+# Model Result = pandas´s dataframe
 def dataFrame_to_JSON(df):
     json = df.to_json(orient = 'index')
     return json
@@ -323,15 +319,7 @@ def JSON_to_dataFrame(json):
     df = pd.read_json(json, orient = 'index')
     return df    
 
-def main():
-    # global road_history
-    model = Model(parameters)
-    result = model.run()
-    variables = result.variables.Vehicle
-    s_json = dataFrame_to_JSON(variables)
-    #print(s_json)
-    #print(variables.columns)
-
+# Get global statistics from multiple Runs
 def get_runs():
     
     blocked_cases = 0
@@ -339,40 +327,41 @@ def get_runs():
     total_runs_trip_completion_rate = 0
     total_runs_completed_trips_percentage = 0
 
-    for i in range(0,100):
+    for i in range(0,10):
         model = Model(parameters)
         result = model.run()
 
 
-    for i in range(len(info_jaja)):
-        if info_jaja[i][2] < 73.0 and info_jaja[i][3] < 0.6:
+    for i in range(len(runs_statistics)):
+        if runs_statistics[i][2] < 73.0 and runs_statistics[i][3] < 0.6:
             blocked_cases += 1
 
-        total_runs_trip_duration += info_jaja[i][1]
-        total_runs_trip_completion_rate += info_jaja[i][2]
-        total_runs_completed_trips_percentage += info_jaja[i][3]
+        total_runs_trip_duration += runs_statistics[i][1]
+        total_runs_trip_completion_rate += runs_statistics[i][2]
+        total_runs_completed_trips_percentage += runs_statistics[i][3]
 
+        # Statistics per run
         # print("Corrida ", i)
-        # print_new_roads(info_jaja[i][0])
-        # print("Duracion Promedio de viaje: ", info_jaja[i][1])
-        # print("Porcentaje promedio de complecion de viaje: ", info_jaja[i][2])
-        # print("Porcentaje de viajes completados: ", info_jaja[i][3])
+        # print_new_roads(runs_statistics[i][0])
+        # print("Duracion Promedio de viaje: ", runs_statistics[i][1])
+        # print("Porcentaje promedio de complecion de viaje: ", runs_statistics[i][2])
+        # print("Porcentaje de viajes completados: ", runs_statistics[i][3])
         # print()
 
-    average_run_trip_length = round(total_runs_trip_duration / len(info_jaja), 2)
-    average_run_trip_completion_rate = round(total_runs_trip_completion_rate / len(info_jaja), 2)
-    average_run_completed_trips_percentage = round(total_runs_completed_trips_percentage / len(info_jaja), 2)
+    average_run_trip_length = round(total_runs_trip_duration / len(runs_statistics), 2)
+    average_run_trip_completion_rate = round(total_runs_trip_completion_rate / len(runs_statistics), 2)
+    average_run_completed_trips_percentage = round(total_runs_completed_trips_percentage / len(runs_statistics), 2)
 
     print("-----------------------------------------")
-    print("Corridas de simulacion: ", len(info_jaja))
+    print("Corridas de simulacion: ", len(runs_statistics))
     print("Duracion promedio de viaje: ", average_run_trip_length)
     print("Porcentaje promedio de complecion de viaje: ", average_run_trip_completion_rate)
     print("Porcentaje de viajes completados: ", average_run_completed_trips_percentage)
     print("CASOS BLOQUEADOS TOTALES: ", blocked_cases)
     print()
 
-
-def generar_json():
+# Generate a json file from the Run Dataframe
+def generate_json():
     model = Model(parameters)
     result = model.run()
 
@@ -402,63 +391,21 @@ def generar_json():
     final_json = json.dumps(dic_json)
     return final_json
 
+parameters = {
+    'steps': 100,
+    'agents': 100,
+}
+
+def main():
+    model = Model(parameters)
+    result = model.run()
+    variables = result.variables.Vehicle
+    
+    # Dataframe 
+    s_json = dataFrame_to_JSON(variables)
+    #print(s_json)
+    #print(variables.columns)
+
 #main()
 get_runs()
-#print(generar_json())
-
-#----------------SERVER----------------
-
-# #El rey del server:
-# class Server(BaseHTTPRequestHandler):
-
-#     def _set_response(self):
-#         self.send_response(200)
-#         self.send_header('Content-type', 'text/html')
-#         self.end_headers()
-
-#     def do_GET(self):
-#         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n",
-#                      str(self.path), str(self.headers))
-#         self._set_response()
-#         self.wfile.write("GET request for {}".format(
-#             self.path).encode('utf-8'))
-
-#     def do_POST(self):
-#         content_length = int(self.headers['Content-Length'])
-#         #post_data = self.rfile.read(content_length)
-#         post_data = json.loads(self.rfile.read(content_length))
-#         #logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
-#         #str(self.path), str(self.headers), post_data.decode('utf-8'))
-#         logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
-#                      str(self.path), str(self.headers), json.dumps(post_data))
-
-#         # AQUI ACTUALIZA LO QUE SE TENGA QUE ACTUALIZAR
-#         self._set_response()
-#         #AQUI SE MANDA EL SHOW
-#         resp = "{\"data\":" + generar_json() + "}"
-#         #print(resp)
-#         self.wfile.write(resp.encode('utf-8'))
-
-
-# def run(server_class=HTTPServer, handler_class=Server, port=8585):
-#     logging.basicConfig(level=logging.INFO)
-    
-#     # Asignar Direccion correcta
-#     server_address = ('', port)
-#     httpd = server_class(server_address, handler_class)
-#     logging.info("Starting httpd...\n")  # HTTPD is HTTP Daemon!
-#     try:
-#         httpd.serve_forever()
-#     except KeyboardInterrupt:   # CTRL+C stops the server
-#         pass
-#     httpd.server_close()
-#     logging.info("Stopping httpd...\n")
-
-
-# if __name__ == '__main__':
-#     from sys import argv
-
-#     if len(argv) == 2:
-#         run(port=int(argv[1]))
-#     else:
-#         run()
+#print(generate_json())
